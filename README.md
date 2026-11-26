@@ -35,6 +35,13 @@ As regras de negócio ficam em `src/domain`, em TypeScript puro e sem dependênc
 
 ## Uso de IA
 
+Utilizamos IA como apoio durante o desenvolvimento, principalmente em duas frentes:
+
+- **Apoio em algumas implementações:** sugestões e geração de partes do código, como a configuração inicial do projeto (Vite, Vitest, Playwright e GitHub Actions) e componentes da interface.
+- **Refatoração de código:** melhorias de legibilidade e organização, como a separação entre regras de negócio (`src/domain`), persistência (`src/infra`) e interface (`src/components`), e ajustes nos componentes para facilitar os testes.
+
+Todo o código sugerido pela IA foi revisado pelo grupo antes de entrar no repositório e é validado pelos testes automatizados e pelo CI.
+
 ## Execução dos testes
 
 Pré-requisito: Node.js 22.22.2 ou superior na versão 22, 24.15.0 ou superior na versão 24, ou versão 26 ou superior. O CI utiliza Node.js 24.
