@@ -172,3 +172,80 @@ describe('ReservationSystem - listagem e cancelamento', () => {
     )
   })
 })
+
+describe('ReservationSystem - limites e integridade das reservas', () => {
+  it.each([
+    ['mesmo intervalo', '09:00', '11:00'],
+    ['começa antes e termina durante', '08:00', '10:00'],
+    ['começa durante e termina depois', '10:00', '12:00'],
+    ['contido no intervalo existente', '09:30', '10:30'],
+    ['contém o intervalo existente', '08:00', '12:00'],
+  ])('rejeita sobreposição: %s, sem alterar a reserva existente', (_caso, start, end) => {
+    const { system, room } = setup()
+    const existing = system.createReservation(booking(room.id, { start: '09:00', end: '11:00' }))
+
+    expect(() => system.createReservation(booking(room.id, { owner: 'Bruno', start, end }))).toThrow(
+      expect.objectContaining({ code: 'TIME_CONFLICT' }),
+    )
+    expect(system.listReservations()).toEqual([existing])
+  })
+
+  it('permite intervalos encostados antes e depois de uma reserva', () => {
+    const { system, room } = setup()
+    system.createReservation(booking(room.id, { start: '09:00', end: '10:00' }))
+    system.createReservation(booking(room.id, { start: '08:00', end: '09:00' }))
+    system.createReservation(booking(room.id, { start: '10:00', end: '11:00' }))
+
+    expect(system.listReservations().map((r) => r.start)).toEqual(['08:00', '09:00', '10:00'])
+  })
+
+  it.each([
+    ['início na abertura', '07:00', '08:00'],
+    ['fim no fechamento', '21:00', '22:00'],
+    ['duração de quatro horas', '08:00', '12:00'],
+  ])('aceita %s', (_caso, start, end) => {
+    const { system, room } = setup()
+
+    expect(() => system.createReservation(booking(room.id, { start, end }))).not.toThrow()
+  })
+
+  it.each([
+    ['datas inexistentes', { date: '2030-02-30' }, 'INVALID_DATE'],
+    ['horários inválidos', { start: '24:00' }, 'INVALID_TIME'],
+    ['início igual ao fim', { start: '09:00', end: '09:00' }, 'END_BEFORE_START'],
+    ['fim após o fechamento', { start: '21:00', end: '22:01' }, 'OUTSIDE_BUSINESS_HOURS'],
+    ['mais de quatro horas por um minuto', { start: '08:00', end: '12:01' }, 'MAX_DURATION_EXCEEDED'],
+    ['responsável vazio', { owner: '  ' }, 'INVALID_OWNER'],
+    ['sala inexistente', { roomId: 'inexistente' }, 'ROOM_NOT_FOUND'],
+  ])('rejeita %s sem salvar a reserva', (_caso, changes, code) => {
+    const { system, room } = setup()
+
+    expect(() => system.createReservation(booking(room.id, changes))).toThrow(
+      expect.objectContaining({ code }),
+    )
+    expect(system.listReservations()).toEqual([])
+  })
+
+  it('rejeita um horário passado no dia atual e aceita o horário atual', () => {
+    const { system, room } = setup()
+
+    expect(() =>
+      system.createReservation(booking(room.id, { date: '2030-03-10', start: '07:59', end: '09:00' })),
+    ).toThrow(expect.objectContaining({ code: 'IN_THE_PAST' }))
+    expect(() =>
+      system.createReservation(booking(room.id, { date: '2030-03-10', start: '08:00', end: '09:00' })),
+    ).not.toThrow()
+  })
+
+  it('combina os filtros de sala e data e ordena as reservas por data e início', () => {
+    const { system, room } = setup()
+    const other = system.addRoom({ name: 'Sala 102', capacity: 10, resources: [] })
+    const late = system.createReservation(booking(room.id, { start: '14:00', end: '15:00' }))
+    const early = system.createReservation(booking(room.id))
+    system.createReservation(booking(room.id, { date: '2030-03-12' }))
+    system.createReservation(booking(other.id))
+
+    expect(system.listReservations({ roomId: room.id, date: '2030-03-11' })).toEqual([early, late])
+    expect(system.listReservations({ roomId: other.id, date: '2030-03-12' })).toEqual([])
+  })
+})
