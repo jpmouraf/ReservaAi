@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { InMemoryRepository } from './repository'
 import { ReservationSystem } from './reservationSystem'
-import type { NewReservation } from './types'
+import type { NewReservation, Resource } from './types'
 
 // "Agora" fixo nos testes: 10/03/2030 às 08:00 (horário local)
 const fixedClock = { now: () => new Date(2030, 2, 10, 8, 0) }
@@ -247,5 +247,85 @@ describe('ReservationSystem - limites e integridade das reservas', () => {
 
     expect(system.listReservations({ roomId: room.id, date: '2030-03-11' })).toEqual([early, late])
     expect(system.listReservations({ roomId: other.id, date: '2030-03-12' })).toEqual([])
+  })
+})
+
+describe('ReservationSystem - validação de salas e disponibilidade', () => {
+  it('normaliza o nome da sala antes de salvar e verificar duplicidade', () => {
+    const { system } = setup()
+    const room = system.addRoom({ name: '  Laboratório  ', capacity: 20, resources: [] })
+
+    expect(room.name).toBe('Laboratório')
+    expect(() => system.addRoom({ name: ' laboratório ', capacity: 10, resources: [] })).toThrow(
+      expect.objectContaining({ code: 'DUPLICATE_ROOM' }),
+    )
+  })
+
+  it.each([-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY])(
+    'rejeita a capacidade inválida %s sem cadastrar uma sala',
+    (capacity) => {
+      const { system } = setup()
+
+      expect(() => system.addRoom({ name: 'Laboratório', capacity, resources: [] })).toThrow(
+        expect.objectContaining({ code: 'INVALID_CAPACITY' }),
+      )
+      expect(system.listRooms()).toHaveLength(1)
+    },
+  )
+
+  it('rejeita recurso desconhecido sem cadastrar a sala', () => {
+    const { system } = setup()
+
+    expect(() =>
+      system.addRoom({ name: 'Laboratório', capacity: 20, resources: ['desconhecido' as Resource] }),
+    ).toThrow(expect.objectContaining({ code: 'INVALID_RESOURCE' }))
+    expect(system.listRooms()).toHaveLength(1)
+  })
+
+  it('cadastra cada recurso informado apenas uma vez', () => {
+    const { system } = setup()
+
+    const room = system.addRoom({
+      name: 'Laboratório',
+      capacity: 20,
+      resources: ['projetor', 'projetor', 'computadores'],
+    })
+
+    expect(room.resources).toEqual(['projetor', 'computadores'])
+  })
+
+  it('permite a mesma sala e o mesmo horário em dias diferentes', () => {
+    const { system, room } = setup()
+    system.createReservation(booking(room.id))
+
+    const nextDay = system.createReservation(booking(room.id, { date: '2030-03-12' }))
+
+    expect(system.listReservations()).toHaveLength(2)
+    expect(nextDay.date).toBe('2030-03-12')
+  })
+
+  it('inclui sala com capacidade exatamente igual à solicitada', () => {
+    const { system, room } = setup()
+
+    expect(system.findAvailableRooms({
+      date: '2030-03-11', start: '09:00', end: '10:00', minCapacity: 30,
+    })).toEqual([room])
+  })
+
+  it('retorna a sala ao buscar um horário adjacente à reserva', () => {
+    const { system, room } = setup()
+    system.createReservation(booking(room.id))
+
+    expect(system.findAvailableRooms({
+      date: '2030-03-11', start: '10:00', end: '11:00',
+    })).toEqual([room])
+  })
+
+  it('rejeita uma busca fora do horário de funcionamento', () => {
+    const { system } = setup()
+
+    expect(() => system.findAvailableRooms({
+      date: '2030-03-11', start: '21:00', end: '22:01',
+    })).toThrow(expect.objectContaining({ code: 'OUTSIDE_BUSINESS_HOURS' }))
   })
 })
