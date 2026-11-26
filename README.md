@@ -18,6 +18,8 @@ O **ReservaAi** é um sistema web para reserva de salas. Funcionalidades:
 - Cancelamento de reservas
 - Busca de salas disponíveis em um horário, com capacidade mínima
 
+Os dados são armazenados no `localStorage` do navegador: eles persistem após recarregar a página, mas não são compartilhados entre navegadores ou dispositivos. O bloqueio de conflitos considera apenas os dados armazenados naquele navegador.
+
 ## Tecnologias
 
 - **TypeScript + React**: interface web
@@ -35,7 +37,7 @@ As regras de negócio ficam em `src/domain`, em TypeScript puro e sem dependênc
 
 ## Execução dos testes
 
-Pré-requisito: Node.js 22.12 ou superior.
+Pré-requisito: Node.js 22.22.2 ou superior na versão 22, 24.15.0 ou superior na versão 24, ou versão 26 ou superior. O CI utiliza Node.js 24.
 
 ```bash
 npm install
