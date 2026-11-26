@@ -49,3 +49,9 @@ npm run e2e           # testes end-to-end com Playwright
 ```
 
 Para rodar a aplicação localmente: `npm run dev`.
+
+## Deploy automático
+
+O GitHub Actions publica a aplicação na Vercel após os testes passarem em Linux, macOS e Windows, em cada push para `main`. Também é possível iniciar o fluxo manualmente na aba Actions, selecionando `main`.
+
+Para ativar o deploy, um administrador do repositório deve configurar os secrets `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` e `VERCEL_TOKEN` em **Settings → Secrets and variables → Actions**. Os IDs ficam nas configurações da equipe e do projeto na Vercel. Crie um token com acesso à equipe do projeto e não o registre no repositório. Mais detalhes: [guia da Vercel para GitHub Actions](https://vercel.com/kb/guide/how-can-i-use-github-actions-with-vercel).
