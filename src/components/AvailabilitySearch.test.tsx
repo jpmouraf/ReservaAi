@@ -80,4 +80,29 @@ describe('AvailabilitySearch', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('O término deve ser depois do início.')
     expect(screen.queryByRole('list')).not.toBeInTheDocument()
   })
+
+  it('remove os resultados anteriores quando os critérios de busca são alterados', async () => {
+    const user = userEvent.setup()
+    render(<AvailabilitySearch onSearch={() => [auditorio]} />)
+
+    await preencherHorario(user)
+    await user.click(screen.getByRole('button', { name: 'Buscar salas' }))
+    expect(screen.getByRole('list')).toHaveTextContent('Auditório')
+
+    await user.type(screen.getByLabelText('Lugares necessários'), '50')
+    expect(screen.queryByRole('list')).not.toBeInTheDocument()
+  })
+
+  it('descarta o resultado anterior quando os dados do sistema mudam', async () => {
+    const user = userEvent.setup()
+    const onSearch = vi.fn(() => [auditorio])
+    const { rerender } = render(<AvailabilitySearch onSearch={onSearch} version={0} />)
+
+    await preencherHorario(user)
+    await user.click(screen.getByRole('button', { name: 'Buscar salas' }))
+    rerender(<AvailabilitySearch onSearch={onSearch} version={1} />)
+
+    expect(screen.queryByRole('list')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Data da busca')).toHaveValue('2026-12-01')
+  })
 })

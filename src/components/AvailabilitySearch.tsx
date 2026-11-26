@@ -5,25 +5,28 @@ import { errorMessage } from "./errorMessage";
 
 interface AvailabilitySearchProps {
   onSearch: (query: AvailabilityQuery) => Room[];
+  version?: number;
 }
 
-export function AvailabilitySearch({ onSearch }: AvailabilitySearchProps) {
+export function AvailabilitySearch({ onSearch, version = 0 }: AvailabilitySearchProps) {
   const [date, setDate] = useState("");
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [minCapacity, setMinCapacity] = useState("");
-  const [results, setResults] = useState<Room[] | null>(null);
+  const [search, setSearch] = useState<{ version: number; results: Room[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const results = search?.version === version ? search.results : null;
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
     try {
-      setResults(
-        onSearch({ date, start, end, minCapacity: Number(minCapacity) || 0 }),
-      );
+      setSearch({
+        version,
+        results: onSearch({ date, start, end, minCapacity: Number(minCapacity) || 0 }),
+      });
       setError(null);
     } catch (e) {
-      setResults(null);
+      setSearch(null);
       setError(errorMessage(e));
     }
   }
@@ -37,7 +40,7 @@ export function AvailabilitySearch({ onSearch }: AvailabilitySearchProps) {
           <input
             type="date"
             value={date}
-            onChange={(e) => setDate(e.target.value)}
+            onChange={(e) => { setDate(e.target.value); setSearch(null); }}
           />
         </label>
         <div className="row">
@@ -46,7 +49,7 @@ export function AvailabilitySearch({ onSearch }: AvailabilitySearchProps) {
             <input
               type="time"
               value={start}
-              onChange={(e) => setStart(e.target.value)}
+              onChange={(e) => { setStart(e.target.value); setSearch(null); }}
             />
           </label>
           <label>
@@ -54,7 +57,7 @@ export function AvailabilitySearch({ onSearch }: AvailabilitySearchProps) {
             <input
               type="time"
               value={end}
-              onChange={(e) => setEnd(e.target.value)}
+              onChange={(e) => { setEnd(e.target.value); setSearch(null); }}
             />
           </label>
         </div>
@@ -64,7 +67,7 @@ export function AvailabilitySearch({ onSearch }: AvailabilitySearchProps) {
             type="number"
             min={0}
             value={minCapacity}
-            onChange={(e) => setMinCapacity(e.target.value)}
+            onChange={(e) => { setMinCapacity(e.target.value); setSearch(null); }}
           />
         </label>
         {error && (

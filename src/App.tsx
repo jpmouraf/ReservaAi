@@ -16,7 +16,7 @@ function App({ system: injected }: AppProps) {
   const [system] = useState(
     () => injected ?? new ReservationSystem(new LocalStorageRepository()),
   );
-  const [, setVersion] = useState(0);
+  const [version, setVersion] = useState(0);
   const refresh = () => setVersion((v) => v + 1);
 
   const rooms = system.listRooms();
@@ -50,6 +50,7 @@ function App({ system: injected }: AppProps) {
         <RoomList rooms={rooms} />
         <ReservationForm rooms={rooms} onCreate={createReservation} />
         <AvailabilitySearch
+          version={version}
           onSearch={(query) => system.findAvailableRooms(query)}
         />
         <ReservationList
