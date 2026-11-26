@@ -26,3 +26,23 @@ test('descarta a busca anterior após reservar e permite consultar novamente', a
   await page.getByRole('button', { name: 'Buscar salas' }).click()
   await expect(page.getByRole('list', { name: 'Salas disponíveis encontradas' })).toContainText('Sala 101')
 })
+
+test('descarta resultados ao alterar a capacidade e permite uma nova busca', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2030-03-10T12:00:00Z'))
+  await page.goto('/')
+  await page.getByLabel('Nome da sala').fill('Sala 101')
+  await page.getByLabel('Capacidade', { exact: true }).fill('30')
+  await page.getByRole('button', { name: 'Cadastrar sala' }).click()
+  await page.getByLabel('Data da busca').fill('2030-03-11')
+  await page.getByLabel('Disponível a partir de').fill('09:00')
+  await page.getByLabel('Disponível até').fill('10:00')
+  await page.getByLabel('Lugares necessários').fill('30')
+  await page.getByRole('button', { name: 'Buscar salas' }).click()
+  const resultados = page.getByRole('list', { name: 'Salas disponíveis encontradas' })
+  await expect(resultados).toContainText('Sala 101')
+
+  await page.getByLabel('Lugares necessários').fill('31')
+  await expect(resultados).toHaveCount(0)
+  await page.getByRole('button', { name: 'Buscar salas' }).click()
+  await expect(page.getByText('Nenhuma sala disponível nesse horário.')).toBeVisible()
+})
