@@ -4,7 +4,7 @@
 
 ## Integrantes
 
-- Gabriel Faria
+- Gabriel Santos Faria
 - João Henrique Alves Martins
 - João Paulo Moura Furtado
 
@@ -14,7 +14,7 @@ O **ReservaAi** é um sistema web para reserva de salas. Funcionalidades:
 
 - Cadastro de salas (nome, capacidade e recursos, como projetor e ar-condicionado)
 - Criação de reservas (sala, responsável, data, horário de início e de fim)
-- **Bloqueio de conflitos de horário** na mesma sala (regra central)
+- Bloqueio de conflitos de horário na mesma sala
 - Validações: o fim deve ser depois do início, não é possível reservar no passado, as reservas devem ficar dentro do horário de funcionamento (07:00–22:00) e durar no máximo 4 horas
 - Listagem e filtro de reservas por sala ou data
 - Cancelamento de reservas
